@@ -1,24 +1,31 @@
 import logging
 
-from BaseClasses import Item
+from BaseClasses import Item, ItemClassification
 from worlds.AutoWorld import World
 from NetUtils import SlotType
 
 from .options import FillerRecyclerOptions
 
+class FillerRecyclerItem(Item):
+    game = "Filler Recycler"
+
 class FillerRecyclerWorld(World):
     game = "Filler Recycler"
     options: FillerRecyclerOptions
     options_dataclass = FillerRecyclerOptions
-    location_name_to_id = {"If you're sending this location, something has gone horribly wrong": 352000}
-    item_name_to_id = {"If you're receiving this item, something has gone horribly wrong": 352000}
+    location_name_to_id = {"Nowhere": 352000}
+    item_name_to_id = {"Nothing": 352000}
     topology_present = False
 
     global_contributor_blacklist: frozenset[str] = frozenset([
-        # Blacklisted because they produce exclusively no-op filler
-        "Filler Recycler", "Yacht Dice", "Yacht Dice Bliss", "Jigsaw", "Simon Tatham's Portable Puzzle Collection",
-        # Blacklisted because they do not correctly implement create_filler/get_filler_item_name
-        "Terraria", "Rogue Legacy 2"
+        # Blacklisted because they produce no-op filler
+        "Autopelago", "Bumper Stickers", "Clique", "Filler Recycler", "Jigsaw", "Simon Tatham's Portable Puzzle Collection",
+        "SlotLock", "Yacht Dice", "Yacht Dice Bliss",
+        # Blacklisted because their create_filler method is known to create progression items
+        # Usually because they don't override get_filler_item_name or create_filler
+        "Adventure", "ChecksFinder", "ChecksMate", "DLCQuest", "Factorio", "Hollow Knight", "Hylics 2", "Links Awakening DX",
+        "Monster Sanctuary", "Old School Runescape", "Overcooked! 2", "Rogue Legacy 2", "Shivers", "Slime Rancher", "Soul Blazer",
+        "Terraria", "The Messenger", "VVVVVV",
     ])
     filler_item_name_blacklist: frozenset[str] = frozenset(["Nothing", "Filler"])
 
@@ -112,3 +119,11 @@ class FillerRecyclerWorld(World):
             "recycle_non_filler_items": self.options.recycle_non_filler_items.value,
             "dont_recycle_filler_items": self.options.dont_recycle_filler_items.value,
         }
+
+    def set_rules(self) -> None:
+        # Present only to reduce fuzzer errors. As a spectator world this should never be called.
+        self.multiworld.completion_condition[self.player] = lambda state: True
+
+    def create_item(self, name: str) -> FillerRecyclerItem:
+        # Present only to reduce fuzzer errors. As a spectator world this should never be called.
+        return FillerRecyclerItem(name, ItemClassification.progression, self.item_name_to_id[name], self.player)
