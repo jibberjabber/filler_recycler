@@ -288,7 +288,7 @@ class TestFillerRecycler(unittest.TestCase):
     def test_recycle_filler_empty(self):
         contributors: list[World] = []
 
-        actual: Item = self.world.recycle_filler(contributors, 0)
+        actual: Item = self.world.recycle_filler(contributors, 0, {})
         self.assertIsNone(actual)
 
     def test_recycle_filler_first_good(self):
@@ -296,19 +296,45 @@ class TestFillerRecycler(unittest.TestCase):
         b1 = self.multiworld.worlds_by_name["B1"]
         contributors: list[World] = [a1, b1]
 
-        actual: Item = self.world.recycle_filler(contributors, 0)
+        actual: Item = self.world.recycle_filler(contributors, 0, {})
         self.assertEqual("A Filler", actual.name)
         self.assertEqual(2, len(contributors))
         self.assertIn(a1, contributors)
         self.assertIn(b1, contributors)
 
-    def test_recycle_filler_blacklisted_filler(self):
+    def test_recycle_filler_global_dont_contribute(self):
         a1 = self.multiworld.worlds_by_name["A1"]
         b1 = self.multiworld.worlds_by_name["B1"]
         contributors: list[World] = [a1, b1]
         a1.create_filler = MagicMock(return_value=mock_item(a1.game, a1.player, "Nothing", ItemClassification.filler))
 
-        actual: Item = self.world.recycle_filler(contributors, 0)
+        actual: Item = self.world.recycle_filler(contributors, 0, {})
+        self.assertEqual("B Filler", actual.name)
+        self.assertEqual(1, len(contributors))
+        self.assertIn(b1, contributors)
+
+    def test_recycle_filler_dont_contribute_items(self):
+        a1 = self.multiworld.worlds_by_name["A1"]
+        b1 = self.multiworld.worlds_by_name["B1"]
+        contributors: list[World] = [a1, b1]
+        dont_contribute_items = {"A": ["A Filler"]}
+        a1_first_filler = mock_item(a1.game, a1.player, "A Filler", ItemClassification.filler)
+        a1_second_filler = mock_item(a1.game, a1.player, "Different A Filler", ItemClassification.filler)
+        a1.create_filler = MagicMock(side_effect=[a1_first_filler, a1_second_filler])
+
+        actual: Item = self.world.recycle_filler(contributors, 0, dont_contribute_items)
+        self.assertEqual("Different A Filler", actual.name)
+        self.assertEqual(2, len(contributors))
+        self.assertIn(a1, contributors)
+        self.assertIn(b1, contributors)
+
+    def test_recycle_filler_dont_contribute_items_used_all_retries(self):
+        a1 = self.multiworld.worlds_by_name["A1"]
+        b1 = self.multiworld.worlds_by_name["B1"]
+        contributors: list[World] = [a1, b1]
+        dont_contribute_items = {"A": ["A Filler"]}
+
+        actual: Item = self.world.recycle_filler(contributors, 0, dont_contribute_items)
         self.assertEqual("B Filler", actual.name)
         self.assertEqual(1, len(contributors))
         self.assertIn(b1, contributors)
@@ -319,7 +345,7 @@ class TestFillerRecycler(unittest.TestCase):
         contributors: list[World] = [a1, b1]
         a1.create_filler = MagicMock(return_value=a1.progression_item)
 
-        actual: Item = self.world.recycle_filler(contributors, 0)
+        actual: Item = self.world.recycle_filler(contributors, 0, {})
         self.assertEqual("B Filler", actual.name)
         self.assertEqual(1, len(contributors))
         self.assertIn(b1, contributors)
@@ -330,7 +356,7 @@ class TestFillerRecycler(unittest.TestCase):
         contributors: list[World] = [a1, b1]
         a1.create_filler = MagicMock(side_effect=Exception("Mistakes were made"))
 
-        actual: Item = self.world.recycle_filler(contributors, 0)
+        actual: Item = self.world.recycle_filler(contributors, 0, {})
         self.assertEqual("B Filler", actual.name)
         self.assertEqual(1, len(contributors))
         self.assertIn(b1, contributors)
@@ -342,7 +368,7 @@ class TestFillerRecycler(unittest.TestCase):
         a1.create_filler = MagicMock(side_effect=Exception("Mistakes were made"))
         b1.create_filler = MagicMock(side_effect=Exception("Mistakes were made"))
 
-        actual: Item = self.world.recycle_filler(contributors, 0)
+        actual: Item = self.world.recycle_filler(contributors, 0, {})
         self.assertIsNone(actual)
         self.assertEqual(0, len(contributors))
 
@@ -379,6 +405,7 @@ class TestFillerRecycler(unittest.TestCase):
         self.world.options.contributor_slots_blacklist.value = set()
         self.world.options.recycle_non_filler_items.value = {}
         self.world.options.dont_recycle_filler_items.value = {}
+        self.world.options.dont_contribute_items.value = {}
 
         before_len = len(self.multiworld.itempool)
         before_counter = Counter([item.name for item in self.multiworld.itempool])
