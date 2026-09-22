@@ -126,6 +126,7 @@ class FillerRecyclerWorld(World):
             "contributor_slots_blacklist": self.options.contributor_slots_blacklist.value,
             "recycle_non_filler_items": self.options.recycle_non_filler_items.value,
             "dont_recycle_filler_items": self.options.dont_recycle_filler_items.value,
+            "dont_contribute_items": self.options.dont_contribute_items.value,
         }
 
     def set_rules(self) -> None:

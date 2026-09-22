@@ -64,7 +64,7 @@ class DontContributeItems(OptionDict):
       Hollow Knight:
       - Rancid_Egg
       Another Game:
-      - Important And Unavoidable"""
+      - Skip Me"""
     display_name = "Don't Contribute Items"
 
 @dataclass
