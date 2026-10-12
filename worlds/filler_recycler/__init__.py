@@ -24,7 +24,9 @@ class FillerRecyclerWorld(World):
             return None
         contributor_index: int = filler_index % len(contributors)
         contributor: World = contributors[contributor_index]
-        if retries_used >= recycle_max_retries:
+        if type(contributor).get_filler_item_name == World.get_filler_item_name and type(contributor).create_filler == World.create_filler:
+            logging.warning(f"{contributor.player_name}'s {contributor.game} does not override get_filler_item_name or create_filler, removing from contributors")
+        elif retries_used >= recycle_max_retries:
             logging.warning(f"{contributor.player_name}'s {contributor.game} did not generate valid filler in {recycle_max_retries} tries")
         else:
             try:
@@ -32,8 +34,10 @@ class FillerRecyclerWorld(World):
                 if contributed_filler is not None:
                     if contributed_filler.name in global_dont_contribute_items or (contributor.game in dont_contribute_items and contributed_filler.name in dont_contribute_items[contributor.game]):
                         return self.recycle_filler(contributors, contributor_index, dont_contribute_items, retries_used + 1)
-                    elif contributed_filler.advancement:
-                        logging.warning(f"{contributor.player_name}'s {contributor.game}.create_filler created progression item {contributed_filler.name}, removing from contributors")
+                    # Progression check removed; if the world overrides get_filler_item_name or create_filler but still returns
+                    # progression, assume that they know what they're doing and carry on
+                    # elif contributed_filler.advancement:
+                    #     logging.warning(f"{contributor.player_name}'s {contributor.game}.create_filler created progression item {contributed_filler.name}, removing from contributors")
                     else:
                         return contributed_filler
             except Exception as e:
