@@ -16,23 +16,59 @@ def mock_item(game: str, player: int, name: str, classification: ItemClassificat
     item.advancement = classification == ItemClassification.progression
     return item
 
-def mock_world(multiworld: MultiWorld, player: int, game: str, player_name: str) -> None:
-    world = MagicMock()
-    world.game = game
-    world.player_name = player_name
-    world.filler_item = mock_item(game, player, f"{game} Filler", ItemClassification.filler)
-    world.useful_item = mock_item(game, player, f"{game} Useful", ItemClassification.useful)
-    world.progression_item = mock_item(game, player, f"{game} Progression", ItemClassification.progression)
-    world.create_filler = MagicMock(return_value=world.filler_item)
-    world.get_filler_item_name = MagicMock(return_value="Test")
+class MockWorld(World):
+    def __init__(self, multiworld: MultiWorld, player: int, game: str, player_name: str):
+        self.filler_item = mock_item(game, player, f"{game} Filler", ItemClassification.filler)
+        self.useful_item = mock_item(game, player, f"{game} Useful", ItemClassification.useful)
+        self.progression_item = mock_item(game, player, f"{game} Progression", ItemClassification.progression)
+        self.create_filler = MagicMock(return_value=self.filler_item)
+        self.internal_player_name = player_name
+        self.player = player
 
-    multiworld.game[player] = game
-    multiworld.worlds[player] = world
-    multiworld.worlds_by_name[player_name] = world
-    multiworld.player_name[player] = player_name
-    multiworld.itempool.append(world.filler_item)
-    multiworld.itempool.append(world.useful_item)
-    multiworld.itempool.append(world.progression_item)
+        multiworld.game[player] = game
+        multiworld.worlds[player] = self
+        multiworld.worlds_by_name[player_name] = self
+        multiworld.player_name[player] = player_name
+        multiworld.itempool.append(self.filler_item)
+        multiworld.itempool.append(self.useful_item)
+        multiworld.itempool.append(self.progression_item)
+
+    def get_filler_item_name(self):
+        return "Test"
+
+    @property
+    def player_name(self) -> str:
+        return self.internal_player_name
+
+class A1(MockWorld):
+    game = "A1"
+    options_dataclass = None
+    location_name_to_id = {}
+    item_name_to_id = {}
+
+class A(MockWorld):
+    game = "A"
+    options_dataclass = None
+    location_name_to_id = {}
+    item_name_to_id = {}
+
+class B(MockWorld):
+    game = "B"
+    options_dataclass = None
+    location_name_to_id = {}
+    item_name_to_id = {}
+
+class manual_C(MockWorld):
+    game = "manual_C"
+    options_dataclass = None
+    location_name_to_id = {}
+    item_name_to_id = {}
+
+class manual_D(MockWorld):
+    game = "manual_D"
+    options_dataclass = None
+    location_name_to_id = {}
+    item_name_to_id = {}
 
 class TestFillerRecycler(unittest.TestCase):
     def setUp(self):
@@ -50,12 +86,12 @@ class TestFillerRecycler(unittest.TestCase):
         self.multiworld.player_name[1] = "Filler Recycler"
         self.world.options = MagicMock()
 
-        mock_world(self.multiworld, 2, "A", "A1")
-        mock_world(self.multiworld, 3, "A", "A2")
-        mock_world(self.multiworld, 4, "B", "B1")
-        mock_world(self.multiworld, 5, "B", "B2")
-        mock_world(self.multiworld, 6, "manual_C", "manual_C")
-        mock_world(self.multiworld, 7, "manual_D", "manual_D")
+        A(self.multiworld, 2, "A", "A1")
+        A(self.multiworld, 3, "A", "A2")
+        B(self.multiworld, 4, "B", "B1")
+        B(self.multiworld, 5, "B", "B2")
+        manual_C(self.multiworld, 6, "manual_C", "manual_C")
+        manual_D(self.multiworld, 7, "manual_D", "manual_D")
 
     def test_get_recyclers_nothing_to_recycle(self):
         self.world.options.games_to_recycle.value = set()

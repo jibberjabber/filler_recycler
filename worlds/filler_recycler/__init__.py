@@ -24,7 +24,7 @@ class FillerRecyclerWorld(World):
             return None
         contributor_index: int = filler_index % len(contributors)
         contributor: World = contributors[contributor_index]
-        if contributor.get_filler_item_name == World.get_filler_item_name and contributor.create_filler == World.create_filler:
+        if type(contributor).get_filler_item_name == World.get_filler_item_name and type(contributor).create_filler == World.create_filler:
             logging.warning(f"{contributor.player_name}'s {contributor.game} does not override get_filler_item_name or create_filler, removing from contributors")
         elif retries_used >= recycle_max_retries:
             logging.warning(f"{contributor.player_name}'s {contributor.game} did not generate valid filler in {recycle_max_retries} tries")
