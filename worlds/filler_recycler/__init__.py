@@ -4,6 +4,7 @@ from BaseClasses import Item, ItemClassification
 from worlds.AutoWorld import World
 from NetUtils import SlotType
 
+from .constants import global_contributor_blacklist, global_dont_contribute_items, recycle_max_retries
 from .options import FillerRecyclerOptions
 
 class FillerRecyclerItem(Item):
@@ -17,32 +18,19 @@ class FillerRecyclerWorld(World):
     item_name_to_id = {"Nothing": 352000}
     topology_present = False
 
-    global_contributor_blacklist: frozenset[str] = frozenset([
-        # Blacklisted because they produce no-op filler
-        "Autopelago", "Bumper Stickers", "Clique", "Filler Recycler", "Jigsaw", "Simon Tatham's Portable Puzzle Collection",
-        "SlotLock", "Yacht Dice", "Yacht Dice Bliss",
-        # Blacklisted because their create_filler method is known to create progression items
-        # Usually because they don't override get_filler_item_name or create_filler
-        "Adventure", "ChecksFinder", "ChecksMate", "DLCQuest", "Factorio", "Hylics 2", "Links Awakening DX",
-        "Monster Sanctuary", "Old School Runescape", "Overcooked! 2", "Rogue Legacy 2", "Shivers", "Slime Rancher",
-        "Soul Blazer", "Terraria", "The Messenger", "VVVVVV",
-    ])
-    global_dont_contribute_items: frozenset[str] = frozenset(["Nothing", "Filler"])
-    recycle_max_retries = 20
-
     def recycle_filler(self, contributors: list[World], filler_index: int, dont_contribute_items: dict[str, list[str]], retries_used:int = 0) -> Item:
         if not contributors:
             logging.warning("All contributors have been removed; no additional filler will be recycled")
             return None
         contributor_index: int = filler_index % len(contributors)
         contributor: World = contributors[contributor_index]
-        if retries_used >= self.recycle_max_retries:
-            logging.warning(f"{contributor.player_name} did not generate valid filler in {self.recycle_max_retries} tries")
+        if retries_used >= recycle_max_retries:
+            logging.warning(f"{contributor.player_name}'s {contributor.game} did not generate valid filler in {recycle_max_retries} tries")
         else:
             try:
                 contributed_filler: Item = contributor.create_filler()
                 if contributed_filler is not None:
-                    if contributed_filler.name in self.global_dont_contribute_items or (contributor.game in dont_contribute_items and contributed_filler.name in dont_contribute_items[contributor.game]):
+                    if contributed_filler.name in global_dont_contribute_items or (contributor.game in dont_contribute_items and contributed_filler.name in dont_contribute_items[contributor.game]):
                         return self.recycle_filler(contributors, contributor_index, dont_contribute_items, retries_used + 1)
                     elif contributed_filler.advancement:
                         logging.warning(f"{contributor.player_name}'s {contributor.game}.create_filler created progression item {contributed_filler.name}, removing from contributors")
@@ -77,7 +65,7 @@ class FillerRecyclerWorld(World):
                  or world.game in contributor_games
                  or (manual_contributors and world.game.startswith("manual_"))
                  or world.player_name in contributor_slots)
-             and world.game not in self.global_contributor_blacklist
+             and world.game not in global_contributor_blacklist
              and world.game not in contributor_games_blacklist
              and world.player_name not in contributor_slots_blacklist
              and world.player_name not in recyclers
