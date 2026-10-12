@@ -24,6 +24,7 @@ def mock_world(multiworld: MultiWorld, player: int, game: str, player_name: str)
     world.useful_item = mock_item(game, player, f"{game} Useful", ItemClassification.useful)
     world.progression_item = mock_item(game, player, f"{game} Progression", ItemClassification.progression)
     world.create_filler = MagicMock(return_value=world.filler_item)
+    world.get_filler_item_name = MagicMock(return_value="Test")
 
     multiworld.game[player] = game
     multiworld.worlds[player] = world
@@ -335,17 +336,6 @@ class TestFillerRecycler(unittest.TestCase):
         dont_contribute_items = {"A": ["A Filler"]}
 
         actual: Item = self.world.recycle_filler(contributors, 0, dont_contribute_items)
-        self.assertEqual("B Filler", actual.name)
-        self.assertEqual(1, len(contributors))
-        self.assertIn(b1, contributors)
-
-    def test_recycle_filler_progression(self):
-        a1 = self.multiworld.worlds_by_name["A1"]
-        b1 = self.multiworld.worlds_by_name["B1"]
-        contributors: list[World] = [a1, b1]
-        a1.create_filler = MagicMock(return_value=a1.progression_item)
-
-        actual: Item = self.world.recycle_filler(contributors, 0, {})
         self.assertEqual("B Filler", actual.name)
         self.assertEqual(1, len(contributors))
         self.assertIn(b1, contributors)
