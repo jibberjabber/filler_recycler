@@ -17,15 +17,15 @@ def mock_item(game: str, player: int, name: str, classification: ItemClassificat
     return item
 
 class MockWorld(World):
-    def __init__(self, multiworld: MultiWorld, player: int, game: str, player_name: str):
-        self.filler_item = mock_item(game, player, f"{game} Filler", ItemClassification.filler)
-        self.useful_item = mock_item(game, player, f"{game} Useful", ItemClassification.useful)
-        self.progression_item = mock_item(game, player, f"{game} Progression", ItemClassification.progression)
+    def __init__(self, multiworld: MultiWorld, player: int, player_name: str):
+        self.filler_item = mock_item(self.game, player, f"{self.game} Filler", ItemClassification.filler)
+        self.useful_item = mock_item(self.game, player, f"{self.game} Useful", ItemClassification.useful)
+        self.progression_item = mock_item(self.game, player, f"{self.game} Progression", ItemClassification.progression)
         self.create_filler = MagicMock(return_value=self.filler_item)
         self.internal_player_name = player_name
         self.player = player
 
-        multiworld.game[player] = game
+        multiworld.game[player] = self.game
         multiworld.worlds[player] = self
         multiworld.worlds_by_name[player_name] = self
         multiworld.player_name[player] = player_name
@@ -40,33 +40,23 @@ class MockWorld(World):
     def player_name(self) -> str:
         return self.internal_player_name
 
-class A1(MockWorld):
-    game = "A1"
-    options_dataclass = None
-    location_name_to_id = {}
-    item_name_to_id = {}
-
 class A(MockWorld):
     game = "A"
-    options_dataclass = None
     location_name_to_id = {}
     item_name_to_id = {}
 
 class B(MockWorld):
     game = "B"
-    options_dataclass = None
     location_name_to_id = {}
     item_name_to_id = {}
 
 class manual_C(MockWorld):
     game = "manual_C"
-    options_dataclass = None
     location_name_to_id = {}
     item_name_to_id = {}
 
 class manual_D(MockWorld):
     game = "manual_D"
-    options_dataclass = None
     location_name_to_id = {}
     item_name_to_id = {}
 
@@ -86,12 +76,12 @@ class TestFillerRecycler(unittest.TestCase):
         self.multiworld.player_name[1] = "Filler Recycler"
         self.world.options = MagicMock()
 
-        A(self.multiworld, 2, "A", "A1")
-        A(self.multiworld, 3, "A", "A2")
-        B(self.multiworld, 4, "B", "B1")
-        B(self.multiworld, 5, "B", "B2")
-        manual_C(self.multiworld, 6, "manual_C", "manual_C")
-        manual_D(self.multiworld, 7, "manual_D", "manual_D")
+        A(self.multiworld, 2, "A1")
+        A(self.multiworld, 3, "A2")
+        B(self.multiworld, 4, "B1")
+        B(self.multiworld, 5, "B2")
+        manual_C(self.multiworld, 6, "manual_C")
+        manual_D(self.multiworld, 7, "manual_D")
 
     def test_get_recyclers_nothing_to_recycle(self):
         self.world.options.games_to_recycle.value = set()

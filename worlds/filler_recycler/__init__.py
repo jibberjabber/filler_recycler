@@ -49,7 +49,7 @@ class FillerRecyclerWorld(World):
 
         return set([world.player_name for world in self.multiworld.worlds.values()
             if (world.game in games_to_recycle or world.player_name in slots_to_recycle
-            or (recycle_all_manuals and world.game.startswith("manual_")))])
+            or (recycle_all_manuals and world.game.lower().startswith("manual_")))])
 
     def get_contributors(self, recyclers: set[str]) -> list[World]:
         contributor_games: set[str] = self.options.contributor_games.value
@@ -63,13 +63,13 @@ class FillerRecyclerWorld(World):
         return [world for world in self.multiworld.worlds.values()
              if (not (contributor_games or contributor_slots)
                  or world.game in contributor_games
-                 or (manual_contributors and world.game.startswith("manual_"))
+                 or (manual_contributors and world.game.lower().startswith("manual_"))
                  or world.player_name in contributor_slots)
              and world.game not in global_contributor_blacklist
              and world.game not in contributor_games_blacklist
              and world.player_name not in contributor_slots_blacklist
              and world.player_name not in recyclers
-             and (manual_contributors_allowed or not world.game.startswith("manual_"))]
+             and (manual_contributors_allowed or not world.game.lower().startswith("manual_"))]
 
     def get_items_to_recycle(self, recyclers: set[str]) -> list[Item]:
         recycle_non_filler_items: dict[str, list[str]] = self.options.recycle_non_filler_items.value
